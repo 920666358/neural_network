@@ -33,7 +33,6 @@ class NueralNetwork(object):
         self.w_ho += self.lr*numpy.dot((output_errors*final_outputs*(1.0-final_outputs)), numpy.transpose(hidden_outputs))
         self.w_ih += self.lr*numpy.dot((hidden_errors*hidden_outputs*(1.0-hidden_outputs)), numpy.transpose(inputs))
 
-
     # query the outputs
     def query(self, inputs):
         hidden_inputs = numpy.dot(self.w_ih, inputs)
@@ -44,36 +43,55 @@ class NueralNetwork(object):
 
         return final_outputs
 
+    def test(self, inputs):
+        pass
+
 
 if __name__ == '__main__':
     input_nodes = 784
-    hidden_nodes = 100
+    # hidden_nodes = 100   # 调整节点数，改变网络形状
+    hidden_nodes = 200
     output_nodes = 10
-    learning_rate = 0.3
-    # 初始化网络，学习率为0.3
+    # learning_rate = 0.5
+    # learning_rate = 0.3
+    learning_rate = 0.1
+    # learning_rate = 0.2
+    # 初始化网络，学习率为0.5|0.3|0.1
     n = NueralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 
     # 读取并准备输入数据
-    with open('mnist_train_100.csv', 'r') as f:
+    with open('..\data\mnist_train.csv', 'r') as f:
         training_data = f.readlines()
-    for data in training_data:
-        all_values = data.split(',')
-        inputs = (numpy.asfarray(all_values[1:])/255*0.99)+0.01
-        targets = numpy.zeros(output_nodes) + 0.01
-        targets[int(all_values[0])] = 0.99
-        n.train(inputs, targets)
 
-    # print(n.w_ih)
-    # print('*'*50)
-    # print(n.w_ho)
+    # 设置循环次数，即训练世代数
+    epochs = 5  # 通过多次试错，找出甜蜜点（最佳值）
+    for i in range(epochs):
+        for data in training_data:
+            all_values = data.split(',')
+            inputs = (numpy.asfarray(all_values[1:])/255*0.99)+0.01
+            targets = numpy.zeros(output_nodes) + 0.01
+            targets[int(all_values[0])] = 0.99
+            # training the network
+            n.train(inputs, targets)
 
-    with open('mnist_test_10.csv', 'r') as f:
+    # 使用测试集进行测试，并计算预测准确率
+    with open('..\data\mnist_test.csv', 'r') as f:
         test_data = f.readlines()
-    # for data in test_data:
-    all_values = test_data[0].split(',')
-    test_output = n.query((numpy.asfarray(all_values[1:])/255*0.99)+0.01)
-    print(test_output)
-    matplotlib.pyplot.imshow(numpy.asfarray(all_values[1:]).reshape((28, 28)), cmap='Greys', interpolation='None')
-    pylab.show()
+    score = []  # 用于记录预测结果是否正确
+    for data in test_data:
+        all_values = data.split(',')
+        # print(all_values[0])  # 正确的标签
+        test_output = n.query((numpy.asfarray(all_values[1:])/255*0.99)+0.01)
+        # print(test_output)   # 预测的标签
+        predic_lable = test_output.tolist().index(max(test_output.tolist()))
+        # print(predic_lable)
+        # matplotlib.pyplot.imshow(numpy.asfarray(all_values[1:]).reshape((28, 28)), cmap='Greys', interpolation='None')
+        # pylab.show()
 
-    print(test_output.tolist().index(max(test_output.tolist())))
+        if int(predic_lable) == int(all_values[0]):
+            score.append(1)
+        else:
+            score.append(0)
+
+    accuracy = score.count(1)/len(score)
+    print(accuracy)
